@@ -4,3 +4,30 @@
   padding: 2rem;
   text-align: center;
 }
+
+
+
+@keyframes fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 1;
+  }
+}
+
+.matrix-column {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
+.matrix-drop {
+  display: block;
+  color: #00ff00;
+  font-size: 1.5rem;
+  margin: 2px 0;
+  opacity: 0;
+}

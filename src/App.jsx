@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,13 +16,24 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-export default function MemoryLog() {
+export default function ToDoList() {
   const [inputValue, setInputValue] = useState("");
   const [items, setItems] = useState([]);
   const [newItemIndex, setNewItemIndex] = useState(null);
+  const [showBootLogs, setShowBootLogs] = useState(true);
+  const [flash, setFlash] = useState(false);
+
+  // Boot log disappears after 2.5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowBootLogs(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   function handleSubmit(event) {
     event.preventDefault();
+
     let newId = items.length > 0 ? Math.max(...items.map((item) => item.id)) + 1 : 1;
 
     setItems([
@@ -34,11 +45,16 @@ export default function MemoryLog() {
     ]);
     setInputValue("");
     setNewItemIndex(items.length);
+
+    // Trigger green flash
+    setFlash(true);
+    setTimeout(() => setFlash(false), 150);
   }
 
   function handleRemove(id) {
     setItems((prevItems) => {
-      return prevItems.filter((item) => item.id !== id);
+      const newItems = prevItems.filter((item) => item.id !== id);
+      return newItems;
     });
   }
 
@@ -60,18 +76,32 @@ export default function MemoryLog() {
 
   return (
     <div className="min-h-screen bg-black text-green-400 flex items-center justify-center p-8 relative font-mono overflow-hidden">
-      {/* Digital Rain Effect */}
+      {/* Matrix Digital Rain */}
       <div className="absolute inset-0 pointer-events-none z-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
         <div className="absolute inset-0 animate-matrixRain bg-[linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[length:2px_20px] opacity-10" />
       </div>
 
-      <div className="w-full max-w-2xl bg-black/70 backdrop-blur border border-green-800 shadow-[0_0_20px_#00ff88] rounded-2xl p-10 z-10">
+      {/* Terminal Flash */}
+      {flash && (
+        <div className="fixed inset-0 bg-green-400 opacity-20 z-50 pointer-events-none animate-fadeFlash" />
+      )}
+
+      {/* Boot Logs */}
+      {showBootLogs && (
+        <div className="absolute top-0 left-0 w-full text-sm text-green-500 p-4 z-20 bg-black/80 backdrop-blur-sm border-b border-green-700 space-y-1 animate-fadeIn">
+          <p>[SYS] Initializing memory bank...</p>
+          <p>[OK] Connection to mainframe established</p>
+          <p>[UPLOAD] Task queue active</p>
+        </div>
+      )}
+
+      <div className="w-full max-w-2xl bg-black/70 backdrop-blur border border-green-800 shadow-[0_0_20px_#00ff88] rounded-2xl p-10 z-10 mt-10">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-extrabold text-green-400 drop-shadow-[0_0_15px_#00ff88]">
-            MEMORY.LOG
+            MEMORY.UPLINK
           </h1>
           <p className="text-sm text-green-500 italic mt-2 tracking-widest">
-            Log memory entries. Upload. Reorder. Remove.
+            Upload tasks to memory stack.
           </p>
         </div>
 
@@ -79,9 +109,9 @@ export default function MemoryLog() {
           <input
             className="flex-grow bg-black border border-green-600 text-green-300 placeholder-green-600 rounded-md p-4 focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-inner"
             type="text"
-            placeholder="Enter memory..."
+            placeholder="Enter next protocol..."
             value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
+            onChange={(e) => setInputValue(e.target.value)}
             required
             autoComplete="off"
           />
@@ -99,25 +129,16 @@ export default function MemoryLog() {
               <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
                 <ul className="transition-all duration-500">
                   {items.map((item, index) => (
-                    <SortableItem
-                      key={item.id}
-                      id={item.id}
-                      item={item}
-                      handleRemove={handleRemove}
-                      isNew={newItemIndex === index}
-                    />
+                    <SortableItem key={item.id} id={item.id} item={item} handleRemove={handleRemove} isNew={newItemIndex === index} />
                   ))}
                 </ul>
               </SortableContext>
             </DndContext>
           ) : (
-            <p className="text-green-700 text-center italic">No memory entries found.</p>
+            <p className="text-green-700 text-center italic">Standby... no tasks loaded.</p>
           )}
         </section>
       </div>
-
-      {/* Soft glow border */}
-      <div className="absolute border-4 border-green-500/20 rounded-xl w-[110%] h-[110%] -top-10 -left-10 blur-xl opacity-10 animate-pulse" />
     </div>
   );
 }
@@ -149,7 +170,6 @@ function SortableItem({ id, item, handleRemove, isNew }) {
       <div className="flex-1 cursor-grab" {...attributes} {...listeners}>
         {item.description}
       </div>
-
       <button
         onClick={() => handleRemove(item.id)}
         className="ml-4 text-green-400 hover:text-green-200 text-xl font-bold z-10"
